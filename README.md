@@ -1,17 +1,17 @@
 src/main/java/com/example/springboot/
 ├── model/
-│   └── PaymentRequest.java        <-- (UC6: Secure Data Storage)
+│   └── PaymentRequest.java        <-- [UC6] Secure Data Storage / DTOs
 ├── strategy/
-│   ├── PaymentStrategy.java       <-- (GoF Strategy Interface)
-│   ├── CreditCardStrategy.java    <-- (UC5: Card Validation)
-│   ├── PayPalStrategy.java        <-- (UC5: PayPal Validation)
-│   └── BankTransferStrategy.java  <-- (UC5: Bank Validation)
+│   ├── PaymentStrategy.java       <-- [Pattern] GoF Strategy Interface
+│   ├── CreditCardStrategy.java    <-- [UC5] Card Validation Logic
+│   ├── PayPalStrategy.java        <-- [UC5] PayPal Integration Logic
+│   └── BankTransferStrategy.java  <-- [UC5] Bank Transfer Logic
 ├── service/
-│   ├── PaymentService.java        <-- (UC5: Workflow Logic)
-│   ├── PaymentMethodService.java  <-- (UC6: CRUD Management)
-│   └── BookingHistoryService.java <-- (UC4: History Logic)
+│   ├── PaymentService.java        <-- [UC5] Payment Workflow Orchestration
+│   ├── PaymentMethodService.java  <-- [UC6] Payment Method CRUD Management
+│   └── BookingHistoryService.java <-- [UC4] Transaction History & Audit Logic
 └── repository/
-    └── BookingRepository.java     <-- (The bridge to your teammates' code)
+    └── BookingRepository.java     <-- Data Access Layer (JPA/Hibernate)
 
 
     ### 🛡️ Payment Subsystem Integration Status (UC4-UC7)
@@ -27,3 +27,6 @@ I have completed the backend logic for the following:
 
 1. **Strategy Pattern**: Used to encapsulate different validation and processing algorithms for Credit Card, PayPal, and Bank Transfers. This allows for easy extension of new payment methods without modifying the core service.
 2. **Factory Pattern**: Implemented `PaymentStrategyFactory` to decouple the creation and selection of payment strategies from the `PaymentService`. This centralizes the strategy lookup logic.
+
+
+To run the backend, navigate to the /backend directory and execute ./mvnw spring-boot:run.

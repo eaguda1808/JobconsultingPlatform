@@ -42,39 +42,45 @@
 //    }
 //}
 
-
 package com.example.springboot.model;
 
-import com.example.springboot.model.RegistrationStatus;
-import com.example.springboot.model.Availability;
 import jakarta.persistence.*;
-import lombok.Data.*;
-
-
 import java.util.ArrayList;
 import java.util.List;
-/**
- * Represents a Consultant on the platform.
- * Admins approve or reject consultants via UC11.
- */
+
 @Entity
 public class Consultant {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String name;
     private String email;
-    private String specialization; // e.g. "Software Consulting", "Career Advising"
-    private RegistrationStatus status; // PENDING, APPROVED, REJECTED
+    private String specialization;
+
+    @Enumerated(EnumType.STRING) // Tells JPA to store "PENDING" instead of 0
+    private RegistrationStatus status;
+    
     private Double hourlyRate;
 
+    @OneToMany(mappedBy = "consultant", cascade = CascadeType.ALL) // Changed "mentor" to "consultant" to match Availability.java
+    private List<Availability> availabilities = new ArrayList<>();
+
+    // 1. MANDATORY: Default Constructor for JPA
+    public Consultant() {}
+
+    // 2. Your existing Constructor
     public Consultant(Long id, String name, String email, String specialization, Double hourlyRate) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.specialization = specialization;
-        this.status = RegistrationStatus.PENDING; // all new consultants start as PENDING
+        this.status = RegistrationStatus.PENDING;
         this.hourlyRate = hourlyRate;
     }
 
+    // Getters and Setters
     public Long getId() { return id; }
     public String getName() { return name; }
     public String getEmail() { return email; }
@@ -84,25 +90,20 @@ public class Consultant {
 
     public void setStatus(RegistrationStatus status) { this.status = status; }
 
-    @Override
-    public String toString() {
-        return "Consultant{id=" + id + ", name='" + name + "', email='" + email +
-               "', specialization='" + specialization + "', status=" + status + "}";
-    }
-
-    @OneToMany(mappedBy = "mentor", cascade = CascadeType.ALL)
-    private List<Availability> availabilities = new ArrayList<>();
-
+    // Relationship Helpers
     public void addAvailability(Availability availability) {
         availability.setConsultant(this);
-
         this.availabilities.add(availability);
     }
-
 
     public void removeAvailability(Availability availability) {
         this.availabilities.remove(availability);
         availability.setConsultant(null);
     }
-}
 
+    @Override
+    public String toString() {
+        return "Consultant{id=" + id + ", name='" + name + "', email='" + email +
+               "', specialization='" + specialization + "', status=" + status + "}";
+    }
+}

@@ -11,6 +11,6 @@ import java.util.Optional;
 @Repository
 public interface ConsultantRepository extends JpaRepository<Consultant, Long>  {
 
-    List<Consultant> findByHourly_Rate(Double hourlyRate);
+    List<Consultant> findByHourlyRate(Double hourlyRate);
 
 }

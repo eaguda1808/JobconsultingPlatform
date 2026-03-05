@@ -8,8 +8,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface AvailabilityRepository extends JpaRepository<com.example.springboot.model.Availability, Long> {
+public interface AvailabilityRepository extends JpaRepository<Availability, Long> {
     List<Availability> findByConsultant_Id(Long consultantId);
 
-    List<Availability> findByAvailabilty_Status(AvailabilityStatus availabilityStatus);
+    List<Availability> findByStatus(AvailabilityStatus status);
 }

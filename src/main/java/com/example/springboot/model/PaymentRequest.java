@@ -1,10 +1,9 @@
 package com.example.springboot.model;
 
-import com.example.springboot.model.Availability;
-import jakarta.persistence.*;
-
-import java.util.List;
-
+/**
+ * Simple DTO for Payment Strategy pattern.
+ * Removed database annotations to fix compilation errors.
+ */
 public class PaymentRequest {
     // Basic Info
     private String type; // CREDIT_CARD, DEBIT_CARD, PAYPAL, BANK_TRANSFER
@@ -21,10 +20,9 @@ public class PaymentRequest {
     private String accountNumber;
     private String routingNumber;
 
-    // Default Constructor
     public PaymentRequest() {}
 
-    // getters/setters
+    // Getters and Setters
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
 
@@ -45,24 +43,4 @@ public class PaymentRequest {
 
     public String getRoutingNumber() { return routingNumber; }
     public void setRoutingNumber(String routingNumber) { this.routingNumber = routingNumber; }
-
-    @Entity
-    public static class Mentor {
-        @Id
-        @GeneratedValue(strategy = GenerationType.UUID)
-        private String id;
-
-        @Column(nullable = false)
-        private String firstName;
-        private String lastName;
-
-        @Column(unique=true, nullable = false)
-        private String email;
-
-        private String bio;
-        private Double hourlyRate;
-
-        @OneToMany(mappedBy = "mentor", cascade = CascadeType.ALL)
-        private List<Availability> availabilitySlots;
-    }
 }

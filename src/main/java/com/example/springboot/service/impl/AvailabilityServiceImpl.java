@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
+import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AvailabilityServiceImpl implements AvailabilityService {
     private final ConsultantRepository consultantRepository;
@@ -23,16 +23,20 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         this.availabilityFactory = availabilityFactory;
     }
 
-    @Override
+   @Override
+   @Transactional
     public void createAvailability(Long mentorId, LocalDateTime start, LocalDateTime end) {
-        Consultant mentor = consultantRepository.findById(mentorId)
-                .orElseThrow(() -> new RuntimeException("Mentor not found"));
+    // 1. Find the mentor (Consultant)
+    Consultant mentor = consultantRepository.findById(mentorId)
+            .orElseThrow(() -> new RuntimeException("Mentor not found"));
 
-        Availability availability =
-                AvailabilityFactory.create(start, end);
+    // 2. Use the INJECTED factory (lowercase 'a')
+    Availability availability = availabilityFactory.create(start, end);
+    // 3. Call the method on the OBJECT 
+    mentor.addAvailability(availability);
 
-        Consultant.addAvailability(availability);
+    
 
-        consultantRepository.save(mentor);
-    }
+    consultantRepository.save(mentor);
+}
 }

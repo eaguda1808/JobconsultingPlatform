@@ -4,142 +4,94 @@ import com.example.springboot.model.Consultant;
 import com.example.springboot.model.PolicyManager;
 import com.example.springboot.model.RegistrationStatus;
 import com.example.springboot.model.SystemPolicy;
+import com.example.springboot.repository.ConsultantRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
- * AdminService
- *
- * Contains all business logic for admin use cases:
- *   UC11 – Approve Consultant Registration
- *   UC12 – Define System Policies
- *
- * In-memory storage is used for Phase 1 (no database required).
+ * AdminService - Refactored for JPA Persistence
+ * Preserves all Phase 1 functionality while integrating with H2 Database.
  */
 @Service
 public class AdminService {
 
-    // In-memory store for consultants (maps ID -> Consultant)
-    private final Map<Long, Consultant> consultantStore = new HashMap<>();
-    private long nextConsultantId = 1;
+    @Autowired
+    private ConsultantRepository consultantRepository;
 
-    // Reference to the singleton PolicyManager
     private final PolicyManager policyManager = PolicyManager.getInstance();
 
     // -----------------------------------------------------------------------
-    // UC11 – Approve Consultant Registration
+    // UC11 – Approve Consultant Registration (Database Driven)
     // -----------------------------------------------------------------------
 
-    /**
-     * Register a new consultant (starts in PENDING state).
-     * In a real system this would be called when a consultant signs up.
-     */
     public Consultant registerConsultant(String name, String email, String specialization) {
-        Consultant consultant = new Consultant(nextConsultantId++, name, email, specialization);
-        consultantStore.put(consultant.getId(), consultant);
-        System.out.println("New consultant registered (PENDING): " + consultant);
-        return consultant;
+        // ID is null because JPA GenerationType.IDENTITY will auto-assign it
+        Consultant consultant = new Consultant(null, name, email, specialization, 0.0);
+        Consultant saved = consultantRepository.save(consultant);
+        System.out.println("New consultant registered (PENDING): " + saved);
+        return saved;
     }
 
-    /**
-     * Admin approves a consultant registration.
-     * Returns the updated consultant, or null if not found.
-     */
     public Consultant approveConsultant(Long consultantId) {
-        Consultant consultant = consultantStore.get(consultantId);
-        if (consultant == null) {
-            System.out.println("Consultant not found: " + consultantId);
-            return null;
-        }
-        consultant.setStatus(RegistrationStatus.APPROVED);
-        System.out.println("Consultant APPROVED: " + consultant);
-        return consultant;
+        return updateStatus(consultantId, RegistrationStatus.APPROVED);
     }
 
-    /**
-     * Admin rejects a consultant registration.
-     * Returns the updated consultant, or null if not found.
-     */
     public Consultant rejectConsultant(Long consultantId) {
-        Consultant consultant = consultantStore.get(consultantId);
-        if (consultant == null) {
-            System.out.println("Consultant not found: " + consultantId);
+        return updateStatus(consultantId, RegistrationStatus.REJECTED);
+    }
+
+    private Consultant updateStatus(Long id, RegistrationStatus status) {
+        return consultantRepository.findById(id).map(c -> {
+            c.setStatus(status);
+            Consultant updated = consultantRepository.save(c);
+            System.out.println("Consultant " + status + ": " + updated);
+            return updated;
+        }).orElseGet(() -> {
+            System.out.println("Consultant not found: " + id);
             return null;
-        }
-        consultant.setStatus(RegistrationStatus.REJECTED);
-        System.out.println("Consultant REJECTED: " + consultant);
-        return consultant;
+        });
     }
 
-    /**
-     * Get all consultants (useful for admin dashboard).
-     */
     public List<Consultant> getAllConsultants() {
-        return new ArrayList<>(consultantStore.values());
+        return consultantRepository.findAll();
     }
 
-    /**
-     * Get only consultants awaiting approval.
-     */
     public List<Consultant> getPendingConsultants() {
-        List<Consultant> pending = new ArrayList<>();
-        for (Consultant c : consultantStore.values()) {
-            if (c.getStatus() == RegistrationStatus.PENDING) {
-                pending.add(c);
-            }
-        }
-        return pending;
+        return consultantRepository.findAll().stream()
+                .filter(c -> c.getStatus() == RegistrationStatus.PENDING)
+                .collect(Collectors.toList());
     }
 
-    /**
-     * Get only approved consultants (e.g. to show clients in UC1).
-     */
     public List<Consultant> getApprovedConsultants() {
-        List<Consultant> approved = new ArrayList<>();
-        for (Consultant c : consultantStore.values()) {
-            if (c.getStatus() == RegistrationStatus.APPROVED) {
-                approved.add(c);
-            }
-        }
-        return approved;
+        return consultantRepository.findAll().stream()
+                .filter(c -> c.getStatus() == RegistrationStatus.APPROVED)
+                .collect(Collectors.toList());
     }
 
     // -----------------------------------------------------------------------
-    // UC12 – Define System Policies
+    // UC12 – Define System Policies (Singleton Based)
     // -----------------------------------------------------------------------
 
-    /**
-     * Admin sets or updates a system policy.
-     */
+    
     public SystemPolicy setPolicy(String name, String value, String description) {
-        policyManager.addOrUpdatePolicy(name, value, description);
+        policyManager.addOrUpdatePolicy(name, value, description); 
         SystemPolicy updated = policyManager.getPolicy(name);
         System.out.println("Policy updated: " + updated);
         return updated;
     }
 
-    /**
-     * Get a specific policy by name.
-     */
     public SystemPolicy getPolicy(String name) {
         return policyManager.getPolicy(name);
     }
 
-    /**
-     * Get all current system policies.
-     */
     public Collection<SystemPolicy> getAllPolicies() {
         return policyManager.getAllPolicies();
     }
 
-    /**
-     * Remove a policy by name.
-     */
     public boolean removePolicy(String name) {
         return policyManager.removePolicy(name);
     }

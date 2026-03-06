@@ -7,18 +7,31 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Represents the core Booking entity.
- * Implements the Lifecycle requirements from Section 5.
- * act as the hub that connects a Client, a Consultant, and the Payment Status.
- */
 public class Booking {
+
     private Long id;
     private Long clientId;
     private Consultant consultant;
     private LocalDateTime sessionTime;
     private double basePrice;
+
+    private BookingState state;
+
     private List<BookingObserver> observers = new ArrayList<>();
+
+
+    public Booking(Long id, Long clientId, Consultant consultant,
+                   LocalDateTime sessionTime, double basePrice) {
+
+        this.id = id;
+        this.clientId = clientId;
+        this.consultant = consultant;
+        this.sessionTime = sessionTime;
+        this.basePrice = basePrice;
+
+        this.state = BookingState.REQUESTED;
+    }
+
 
     // Observer methods
     public void addObserver(BookingObserver observer) {
@@ -34,73 +47,87 @@ public class Booking {
             observer.update(this);
         }
     }
-    // Lifecycle States: Requested, Confirmed, Pending Payment, Paid, Rejected, Cancelled, Completed
-    private String state; 
 
-    public Booking(Long id, Long clientId, Consultant consultant, LocalDateTime sessionTime, double basePrice) {
-        this.id = id;
-        this.clientId = clientId;
-        this.consultant = consultant;
-        this.sessionTime = sessionTime;
-        this.basePrice = basePrice;
-        this.state = "Requested"; // Initial state as per Section 5
-    }
 
-    // Getters and Setters
+    // Getters
     public Long getId() { return id; }
+
     public Long getClientId() { return clientId; }
+
     public Consultant getConsultant() { return consultant; }
-    public String getState() { return state; }
 
-
-    /**
-     * Updates the booking state. 
-     * Requirement 5.1.2: Moves to 'Paid' after successful payment.
-     */
-    public void setState(String state) { 
-        this.state = state; 
-    }
+    public BookingState getState() { return state; }
 
     public double getBasePrice() { return basePrice; }
 
+
+    // Lifecycle actions
+
     public void confirm() {
-        if (!Objects.equals(this.state, "Requested")) {
-            throw new IllegalStateException("Booking already processed: " + this.state );
+        if (state != BookingState.REQUESTED) {
+            throw new IllegalStateException("Booking already processed: " + state);
         }
-        this.state = "Confirmed";
+
+        state = BookingState.CONFIRMED;
         notifyObservers();
     }
+
 
     public void reject() {
-        if (!Objects.equals(this.state, "Requested")) {
-            throw new IllegalStateException("Booking already processed: " + this.state );
+        if (state != BookingState.REQUESTED) {
+            throw new IllegalStateException("Booking already processed: " + state);
         }
-        this.state = "Rejected";
+
+        state = BookingState.REJECTED;
         notifyObservers();
     }
 
-    public void cancel() {
 
-        if (Objects.equals(this.state, "Completed")) {
+    public void markPendingPayment() {
+        if (state != BookingState.CONFIRMED) {
+            throw new IllegalStateException("Booking must be confirmed first");
+        }
+
+        state = BookingState.PENDING_PAYMENT;
+        notifyObservers();
+    }
+
+
+    public void markPaid() {
+        if (state != BookingState.PENDING_PAYMENT) {
+            throw new IllegalStateException("Booking must be pending payment");
+        }
+
+        state = BookingState.PAID;
+        notifyObservers();
+    }
+
+
+    public void cancel() {
+        if (state == BookingState.COMPLETED) {
             throw new IllegalStateException("Completed booking cannot be cancelled");
         }
 
-        this.state = "Cancelled";
+        state = BookingState.CANCELLED;
+        notifyObservers();
     }
 
-    public void complete() {
 
-        if (!Objects.equals(this.state, "Paid")) {
+    public void complete() {
+        if (state != BookingState.PAID) {
             throw new IllegalStateException("Booking must be paid before completion");
         }
 
-        this.state = "Completed";
+        state = BookingState.COMPLETED;
+        notifyObservers();
     }
+
+
     @Override
     public String toString() {
         return "Booking{" +
                 "id=" + id +
-                ", state='" + state + '\'' +
+                ", state=" + state.getLabel() +
                 ", consultant=" + consultant.getName() +
                 ", time=" + sessionTime +
                 '}';
